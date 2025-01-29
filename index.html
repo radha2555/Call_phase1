@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="index.css">
+  <title>Authentication System</title>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Authentication System</h2>
+    <div id="auth-form">
+      <input type="text" id="username" placeholder="Enter Username" required />
+      <input type="password" id="password" placeholder="Enter Password" required />
+      <!-- Register Button -->
+      <button onclick="register()">Register</button>
+      <!-- Login Button -->
+      <button onclick="login()">Login</button>
+    </div>
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:5000"; // Adjust based on your backend setup
+
+    // Display messages (Success/Failure)
+    function showMessage(type, message) {
+      const messageDiv = document.getElementById("message");
+      messageDiv.className = `message ${type}`;
+      messageDiv.textContent = message;
+    }
+
+    // Register User Function
+    async function register() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if (!username || !password) {
+        showMessage("error", "Username and password are required.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const result = await response.json();
+        if (response.status === 201) {
+          showMessage("success", result.message);
+        } else {
+          showMessage("error", result.message);
+        }
+      } catch (error) {
+        showMessage("error", "An error occurred. Please try again.");
+      }
+    }
+
+    // Login User Function
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if (!username || !password) {
+        showMessage("error", "Username and password are required.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const result = await response.json();
+        if (response.status === 200) {
+          showMessage("success", result.message);
+        } else {
+          showMessage("error", result.message);
+        }
+      } catch (error) {
+        showMessage("error", "An error occurred. Please try again.");
+      }
+    }
+  </script>
+
+</body>
+</html>

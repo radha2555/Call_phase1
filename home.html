@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="home.css">
+  <title>Home Page</title>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Welcome to the Call Analysis System</h1>
+    <p id="welcome-message"></p>
+
+    <!-- File upload section -->
+    <div class="file-upload">
+      <label for="file">Upload Call Recording (WAV):</label>
+      <input type="file" id="file" accept=".wav" />
+      <button class="btn" onclick="uploadFile()">Upload File</button>
+    </div>
+
+    <!-- Logout button -->
+    <button class="btn" onclick="logout()">Logout</button>
+
+    <!-- Display success/error message -->
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    // Get the JWT token from localStorage
+    const token = localStorage.getItem("auth_token");
+
+    // Check if the user is logged in (token exists)
+    if (!token) {
+      window.location.href = "/login";  // Redirect to login if no token found
+    } else {
+      // Decode JWT token to extract username and display welcome message
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      document.getElementById("welcome-message").textContent = `Hello, ${payload.username}!`;
+    }
+
+    // File upload function
+    async function uploadFile() {
+      const fileInput = document.getElementById("file");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        document.getElementById("message").textContent = "Please select a file to upload.";
+        document.getElementById("message").style.color = "red";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await fetch("http://localhost:5000/upload", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        const result = await response.json();
+        if (response.status === 200) {
+          document.getElementById("message").textContent = result.message;
+          document.getElementById("message").style.color = "green";
+        } else {
+          document.getElementById("message").textContent = result.message;
+          document.getElementById("message").style.color = "red";
+        }
+      } catch (error) {
+        document.getElementById("message").textContent = "An error occurred. Please try again.";
+        document.getElementById("message").style.color = "red";
+      }
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem("auth_token");  // Remove the token from localStorage
+      window.location.href = "/login";  // Redirect to login page
+    }
+  </script>
+</body>
+</html>

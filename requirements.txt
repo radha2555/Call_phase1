@@ -1,0 +1,8 @@
+Flask
+Flask-SQLAlchemy
+Celery
+psycopg2-binary
+boto3
+SpeechRecognition
+pyaudio
+requests
