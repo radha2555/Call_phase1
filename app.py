@@ -32,53 +32,6 @@ class CallRecord(db.Model):
     sentiment = db.Column(db.String(120), nullable=False)
     agent_score = db.Column(db.Float, nullable=False)
 
-# Helper functions
-def convert_audio_to_text(file_path):
-    recognizer = sr.Recognizer()
-    audio_file = sr.AudioFile(file_path)
-    with audio_file as source:
-        audio_data = recognizer.record(source)
-    return recognizer.recognize_google(audio_data)
-
-def analyze_sentiment(text):
-    # Use Hugging Face API for sentiment analysis (or any LLM API)
-    response = requests.post(
-        "https://api-inference.huggingface.co/models/distilbert-base-uncased",
-        headers={"Authorization": "Bearer YOUR_HUGGINGFACE_API_KEY"},
-        json={"inputs": text}
-    )
-    return response.json()
-
-def store_file_in_s3(file_path):
-    s3 = boto3.client('s3')
-    bucket_name = 'your-s3-bucket-name'
-    file_name = os.path.basename(file_path)
-    s3.upload_file(file_path, bucket_name, file_name)
-    return f"s3://{bucket_name}/{file_name}"
-
-# Celery task
-@celery.task(bind=True)
-def process_call_record(self, file_path):
-    text = convert_audio_to_text(file_path)
-    sentiment_data = analyze_sentiment(text)
-    
-    # Calculate call metrics (for now, assuming dummy data)
-    duration = 120  # Dummy call duration
-    hold_duration = 10  # Dummy hold duration
-    agent_score = 0.85  # Dummy agent score
-    
-    # Store analysis in Postgres
-    new_call = CallRecord(
-        filename=file_path,
-        duration=duration,
-        hold_duration=hold_duration,
-        sentiment=sentiment_data['label'],
-        agent_score=agent_score
-    )
-    db.session.add(new_call)
-    db.session.commit()
-
-    return "Call processed successfully"
 
 # Routes
 @app.route('/register', methods=['POST'])
@@ -113,19 +66,6 @@ def upload_file():
     process_call_record.apply_async(args=[file_path])
     
     return jsonify({"message": "File uploaded and processing started", "file_url": file_url})
-
-@app.route('/results/<int:call_id>', methods=['GET'])
-def get_results(call_id):
-    call_record = CallRecord.query.get(call_id)
-    if call_record:
-        return jsonify({
-            "filename": call_record.filename,
-            "duration": call_record.duration,
-            "hold_duration": call_record.hold_duration,
-            "sentiment": call_record.sentiment,
-            "agent_score": call_record.agent_score
-        })
-    return jsonify({"message": "Call record not found"}), 404
 
 if __name__ == '__main__':
     app.run(debug=True)
